@@ -1,5 +1,5 @@
 // ── Aegis Comply · API Service v2 ─────────────────────────────────────────────
-const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3001';
+const API_BASE_URL = 'https://aegis-api-filz.onrender.com';
 
 export const getAccessToken  = () => localStorage.getItem('aegis_access') ?? '';
 export const getRefreshToken = () => localStorage.getItem('aegis_refresh') ?? '';
