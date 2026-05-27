@@ -10,7 +10,7 @@ const schema = z.object({
   DEEPSEEK_API_KEY: z.string().min(1, 'DEEPSEEK_API_KEY is required'),
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  CORS_ORIGIN: process.env.ALLOWED_ORIGINS || '*',
 });
 
 const parsed = schema.safeParse(process.env);
