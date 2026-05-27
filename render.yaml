@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: aegis-api
+    runtime: node
+    repo: https://github.com/Riri1233/middle_done
+    plan: free
+    rootDir: aegis-backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+
+  - type: static
+    name: aegis-frontend
+    runtime: static
+    repo: https://github.com/Riri1233/middle_done
+    rootDir: aegis-frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://aegis-api.onrender.com
