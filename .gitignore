@@ -1,0 +1,23 @@
+# Dependencies
+aegis-backend/node_modules/
+aegis-frontend/node_modules/
+
+# Build outputs
+aegis-backend/dist/
+aegis-frontend/dist/
+
+# Environment files (never commit these)
+**/.env
+**/.env.local
+**/.env.production
+
+# Prisma migrations (generate on deploy)
+aegis-backend/prisma/migrations/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

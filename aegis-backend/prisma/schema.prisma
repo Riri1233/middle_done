@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users & Auth ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  company       String         @default("")
+  inn           String         @default("")
+  activity      String         @default("")
+  plan          String         @default("free")   // free | starter | business | enterprise
+  checksLeft    Int            @default(5)
+  checksUsed    Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  refreshTokens RefreshToken[]
+  checks        Check[]
+  documents     Document[]
+  monitors      Monitor[]
+  apiKeys       ApiKey[]
+  orgMemberships OrgMember[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── Organizations ─────────────────────────────────────────────────────────────
+
+model Organization {
+  id        String      @id @default(cuid())
+  name      String
+  inn       String      @default("")
+  plan      String      @default("business")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  members   OrgMember[]
+  checks    Check[]
+  documents Document[]
+  monitors  Monitor[]
+  apiKeys   ApiKey[]
+}
+
+model OrgMember {
+  id        String       @id @default(cuid())
+  userId    String
+  orgId     String
+  role      String       @default("analyst") // owner | admin | analyst
+  joinedAt  DateTime     @default(now())
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+}
+
+// ── Checks ────────────────────────────────────────────────────────────────────
+
+model Check {
+  id              String        @id @default(cuid())
+  userId          String
+  orgId           String?
+
+  // Core entity data
+  counterparty    String
+  country         String
+  product         String
+  currency        String        @default("")
+
+  // Input form (full)
+  formData        Json
+
+  // Real sanctions screening result (OpenSanctions)
+  sanctionsHits   Json?         // Array of SanctionsHit
+
+  // AI analysis result (DeepSeek)
+  result          Json?         // AnalysisResult
+
+  // Combined risk score (0-100)
+  riskScore       Int?
+
+  // Generated PDF
+  pdfUrl          String?
+
+  // Source
+  source          String        @default("manual") // manual | document | api
+
+  // Linked document (if check was triggered by doc upload)
+  documentId      String?
+
+  createdAt       DateTime      @default(now())
+
+  user            User          @relation(fields: [userId], references: [id])
+  org             Organization? @relation(fields: [orgId], references: [id])
+  document        Document?     @relation(fields: [documentId], references: [id])
+  review          CheckReview?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([orgId, createdAt(sort: Desc)])
+  @@index([counterparty])
+}
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+
+model Document {
+  id            String        @id @default(cuid())
+  userId        String
+  orgId         String?
+
+  filename      String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  storagePath   String
+
+  // Processing status
+  status        String        @default("pending")  // pending | processing | done | error
+  errorMessage  String?
+
+  // Extracted entities (from AI parsing)
+  extracted     Json?         // ExtractedEntities
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id])
+  org           Organization? @relation(fields: [orgId], references: [id])
+  checks        Check[]
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+// ── Monitoring / Watch-list ───────────────────────────────────────────────────
+
+model Monitor {
+  id              String        @id @default(cuid())
+  userId          String
+  orgId           String?
+
+  // Entity being monitored
+  entityName      String
+  entityCountry   String?
+  entityType      String?
+
+  // Status
+  isActive        Boolean       @default(true)
+  lastCheckedAt   DateTime?
+  lastRiskScore   Int?
+  alertLevel      String?       // none | low | medium | high
+
+  // Alert state
+  hasUnreadAlert  Boolean       @default(false)
+  alertMessage    String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id])
+  org             Organization? @relation(fields: [orgId], references: [id])
+
+  @@index([userId, isActive])
+}
+
+// ── API Keys ──────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id          String        @id @default(cuid())
+  userId      String
+  orgId       String?
+
+  name        String
+  keyHash     String        @unique  // hashed key, never stored plain
+  keyPrefix   String        // first 8 chars, for display
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean       @default(true)
+
+  createdAt   DateTime      @default(now())
+
+  user        User          @relation(fields: [userId], references: [id])
+  org         Organization? @relation(fields: [orgId], references: [id])
+
+  @@index([userId])
+}
+
+// ── Analyst Review Queue ───────────────────────────────────────────────────────
+// Enables team compliance workflows: flag → analyst review → decision
+// statuses: pending | in_review | approved | escalated | rejected
+
+model CheckReview {
+  id            String    @id @default(cuid())
+  checkId       String    @unique
+
+  requestedById String    // who flagged this check
+  assignedToId  String?   // who is reviewing (future: multi-user)
+
+  status        String    @default("pending")
+  priority      String    @default("normal")   // normal | high | urgent
+  notes         String?                         // analyst notes when flagging
+
+  // Decision
+  decision      String?   // approve | escalate | reject
+  decisionNote  String?
+  decidedAt     DateTime?
+  decidedById   String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  check         Check     @relation(fields: [checkId], references: [id], onDelete: Cascade)
+
+  @@index([requestedById, status])
+}
