@@ -30,8 +30,8 @@ export type Config = z.infer<typeof schema>;
 // 3. Создаем базовый объект конфигурации строго по выведенному типу
 const configObject: Config = { ...parsed.data };
 
-// 4. Добавляем вычисляемое поле CORS_ORIGIN к уже созданному объекту
+// 4. Добавляем вычисляемое поле к уже созданному объекту
 configObject.CORS_ORIGIN = configObject.ALLOWED_ORIGINS ?? '*';
 
-// 5. Экспортируем готовый объект для использования во всем приложении
+// 5. Экспортируем готовый объект
 export const config = configObject;
