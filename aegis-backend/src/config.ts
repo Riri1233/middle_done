@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Загружаем переменные окружения из .env файла
 dotenv.config();
 
-// 1. Определяем схему для проверки переменных окружения
+// 1. Определяем схему для проверки всех необходимых переменных окружения
 const schema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
@@ -15,25 +15,23 @@ const schema = z.object({
   ALLOWED_ORIGINS: z.string().optional(),
 });
 
-// Выполняем проверку всех переменных из process.env
+// Выполняем проверку переменных окружения
 const parsed = schema.safeParse(process.env);
 
 if (!parsed.success) {
   console.error('Invalid environment variables:');
   console.error(parsed.error.flatten().fieldErrors);
-  process.exit(1); // Останавливаем приложение, если конфиг неверный
+  process.exit(1); // Останавливаем приложение при ошибке в конфиге
 }
 
-// 2. Выводим тип Config из схемы Zod.
-// Это автоматически создаст сложный TypeScript-тип,
-// который знает обо всех полях из схемы.
+// 2. Выводим точный TypeScript-тип на основе схемы Zod
 export type Config = z.infer<typeof schema>;
 
-// 3. Создаем базовый объект конфигурации строго по выведенному типу.
+// 3. Создаем базовый объект конфигурации строго по выведенному типу
 const configObject: Config = { ...parsed.data };
 
-// 4. Добавляем вычисляемое поле CORS_ORIGIN к уже созданному объекту.
+// 4. Добавляем вычисляемое поле CORS_ORIGIN к уже созданному объекту
 configObject.CORS_ORIGIN = configObject.ALLOWED_ORIGINS ?? '*';
 
-// 5. Экспортируем готовый объект для использования в приложении.
+// 5. Экспортируем готовый объект для использования во всем приложении
 export const config = configObject;
