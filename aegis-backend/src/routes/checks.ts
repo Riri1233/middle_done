@@ -72,7 +72,7 @@ router.get('/export/csv', async (req: Request, res: Response): Promise<void> => 
 // Get single
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const check = await getCheck(String(req.params.id), req.user!.id);
+    const check = await getCheck(String(req.params.id as string), req.user!.id);
     if (!check) { res.status(404).json({ error: 'Check not found' }); return; }
     res.json(check);
   } catch (err) {
@@ -85,9 +85,9 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 router.get('/:id/pdf', async (req: Request, res: Response): Promise<void> => {
   try {
     const check = await prisma.check.findFirst({
-      where: { id: req.params.id, userId: req.user!.id },
-      include: { user: { select: { name: true, email: true } } },
-    });
+  where: { id: req.params.id as string as string, userId: req.user!.id },
+  include: { user: true }
+});
     if (!check) { res.status(404).json({ error: 'Check not found' }); return; }
 
     const pdfBuffer = await generateCompliancePDF({
@@ -134,7 +134,7 @@ router.post('/', checkLimiter, validate(createCheckSchema), async (req: Request,
 // Delete
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const ok = await deleteCheck(String(req.params.id), req.user!.id);
+    const ok = await deleteCheck(String(req.params.id as string), req.user!.id);
     if (!ok) { res.status(404).json({ error: 'Check not found' }); return; }
     res.status(204).send();
   } catch (err) {

@@ -68,7 +68,7 @@ router.post('/', validate(createMonitorSchema), async (req: Request, res: Respon
 router.post('/:id/recheck', async (req: Request, res: Response): Promise<void> => {
   try {
     const monitor = await prisma.monitor.findFirst({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
     });
     if (!monitor) { res.status(404).json({ error: 'Monitor not found' }); return; }
 
@@ -100,7 +100,7 @@ router.post('/:id/recheck', async (req: Request, res: Response): Promise<void> =
 router.patch('/:id/read', async (req: Request, res: Response): Promise<void> => {
   try {
     const monitor = await prisma.monitor.updateMany({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
       data: { hasUnreadAlert: false },
     });
     if (monitor.count === 0) { res.status(404).json({ error: 'Not found' }); return; }
@@ -114,7 +114,7 @@ router.patch('/:id/read', async (req: Request, res: Response): Promise<void> => 
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const deleted = await prisma.monitor.deleteMany({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
     });
     if (deleted.count === 0) { res.status(404).json({ error: 'Not found' }); return; }
     res.status(204).send();

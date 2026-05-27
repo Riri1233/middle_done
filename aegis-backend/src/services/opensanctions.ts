@@ -121,7 +121,7 @@ export async function screenEntity(
     }
 
     const data = await res.json();
-    const raw = (data.results ?? []) as any[];
+    const raw = ((data as any).results ?? []) as any[];
 
     const hits: SanctionsHit[] = raw
       .filter(r => (r.score ?? 0) >= SCORE_THRESHOLD)

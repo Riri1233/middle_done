@@ -74,15 +74,15 @@ router.post('/checks/:id/flag', validate(flagSchema), async (req: Request, res: 
   try {
     // Verify the check belongs to this user
     const check = await prisma.check.findFirst({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
     });
     if (!check) { res.status(404).json({ error: 'Check not found' }); return; }
 
     // Upsert — can re-flag with updated notes
     const review = await prisma.checkReview.upsert({
-      where: { checkId: req.params.id },
+      where: { checkId: req.params.id as string },
       create: {
-        checkId:       req.params.id,
+        checkId:       req.params.id as string,
         requestedById: req.user!.id,
         notes,
         priority,
@@ -98,7 +98,7 @@ router.post('/checks/:id/flag', validate(flagSchema), async (req: Request, res: 
         decidedById: null,
       },
     });
-    logger.info({ reviewId: review.id, checkId: req.params.id, priority }, 'Check flagged for review');
+    logger.info({ reviewId: review.id, checkId: req.params.id as string, priority }, 'Check flagged for review');
     res.status(201).json(review);
   } catch (err) {
     logger.error(err, 'flag review failed');
@@ -111,7 +111,7 @@ router.patch('/:id', validate(decisionSchema), async (req: Request, res: Respons
   const { decision, decisionNote } = req.body;
   try {
     const review = await prisma.checkReview.findFirst({
-      where: { id: req.params.id, requestedById: req.user!.id },
+      where: { id: req.params.id as string, requestedById: req.user!.id },
     });
     if (!review) { res.status(404).json({ error: 'Review not found' }); return; }
     if (['approved', 'rejected'].includes(review.status)) {
@@ -123,7 +123,7 @@ router.patch('/:id', validate(decisionSchema), async (req: Request, res: Respons
     };
 
     const updated = await prisma.checkReview.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: {
         decision,
         decisionNote: decisionNote || null,
@@ -132,7 +132,7 @@ router.patch('/:id', validate(decisionSchema), async (req: Request, res: Respons
         decidedById:  req.user!.id,
       },
     });
-    logger.info({ reviewId: req.params.id, decision }, 'Review decided');
+    logger.info({ reviewId: req.params.id as string, decision }, 'Review decided');
     res.json(updated);
   } catch (err) {
     logger.error(err, 'decide review failed');
@@ -144,7 +144,7 @@ router.patch('/:id', validate(decisionSchema), async (req: Request, res: Respons
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const deleted = await prisma.checkReview.deleteMany({
-      where: { id: req.params.id, requestedById: req.user!.id },
+      where: { id: req.params.id as string, requestedById: req.user!.id },
     });
     if (deleted.count === 0) { res.status(404).json({ error: 'Not found' }); return; }
     res.status(204).send();

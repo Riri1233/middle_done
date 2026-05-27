@@ -79,7 +79,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const doc = await prisma.document.findFirst({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
       include: { checks: { select: { id: true, result: true, createdAt: true } } },
     });
     if (!doc) { res.status(404).json({ error: 'Not found' }); return; }
@@ -94,7 +94,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const doc = await prisma.document.findFirst({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
     });
     if (!doc) { res.status(404).json({ error: 'Not found' }); return; }
 
