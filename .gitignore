@@ -2,10 +2,6 @@
 aegis-backend/node_modules/
 aegis-frontend/node_modules/
 
-# Build outputs
-aegis-backend/dist/
-aegis-frontend/dist/
-
 # Environment files (never commit these)
 **/.env
 **/.env.local
