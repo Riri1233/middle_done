@@ -10,7 +10,7 @@ const schema = z.object({
   DEEPSEEK_API_KEY: z.string().min(1, 'DEEPSEEK_API_KEY is required'),
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  CORS_ORIGIN: process.env.ALLOWED_ORIGINS || '*',
+  // Убираем CORS_ORIGIN из схемы Zod, чтобы он не вызывал ошибку типа.
 });
 
 const parsed = schema.safeParse(process.env);
@@ -21,4 +21,9 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const config = parsed.data;
+// Определяем CORS_ORIGIN после парсинга схемы, используя проверенные данные из process.env.
+export const config = {
+  ...parsed.data,
+  // Значение читается из переменной окружения ALLOWED_ORIGINS. Если её нет, то устанавливается "*".
+  CORS_ORIGIN: process.env.ALLOWED_ORIGINS || '*',
+};
